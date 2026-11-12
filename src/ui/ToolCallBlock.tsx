@@ -6,6 +6,7 @@ import type { AcpClient } from "../acp/acp-client";
 import type AgentClientPlugin from "../plugin";
 import { LucideIcon } from "./shared/IconButton";
 import { toRelativePath } from "../utils/paths";
+import { formatToolArguments } from "../utils/tool-arguments";
 import { ToolCallContentView } from "./ToolCallContentView";
 import { useCollapsibleToggle } from "../hooks/useCollapsibleToggle";
 
@@ -63,6 +64,16 @@ export const ToolCallBlock = React.memo(function ToolCallBlock({
 		}
 		return "";
 	}, [plugin]);
+
+	// The arguments, except for commands, whose command line is shown instead
+	const toolArguments = useMemo(
+		() =>
+			rawInput &&
+			!(kind === "execute" && typeof rawInput.command === "string")
+				? formatToolArguments(rawInput)
+				: [],
+		[kind, rawInput],
+	);
 
 	// Get showEmojis setting
 	const showEmojis = plugin.settings.displaySettings.showEmojis;
@@ -157,6 +168,27 @@ export const ToolCallBlock = React.memo(function ToolCallBlock({
 							</code>
 						</div>
 					)}
+				{toolArguments.length > 0 && (
+					<div className="agent-client-message-tool-call-arguments">
+						{toolArguments.map((arg) =>
+							arg.block ? (
+								<div key={arg.name}>
+									<span className="agent-client-message-tool-call-argument-name">
+										{arg.name}:
+									</span>
+									<pre>{arg.value}</pre>
+								</div>
+							) : (
+								<div key={arg.name}>
+									<span className="agent-client-message-tool-call-argument-name">
+										{arg.name}:
+									</span>{" "}
+									<code>{arg.value}</code>
+								</div>
+							),
+						)}
+					</div>
+				)}
 				{locations && locations.length > 0 && (
 					<div className="agent-client-message-tool-call-locations">
 						{locations.map((loc, idx) => (

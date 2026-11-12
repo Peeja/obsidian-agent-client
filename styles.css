@@ -461,6 +461,31 @@ If your plugin does not need CSS, delete this file.
 	font-size: 0.9em;
 }
 
+.agent-client-message-tool-call-arguments {
+	color: var(--text-muted);
+	margin: 4px 0;
+	user-select: text;
+	overflow-wrap: anywhere;
+}
+
+.agent-client-message-tool-call-arguments code,
+.agent-client-message-tool-call-arguments pre {
+	font-family: var(--font-monospace);
+	font-size: 0.9em;
+}
+
+.agent-client-message-tool-call-arguments pre {
+	max-height: 200px;
+	margin: 2px 0 6px;
+	padding: 6px 8px;
+	overflow: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	background-color: var(--background-primary);
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
 /* ===== Permission Request (vertical option list) ===== */
 /* PermissionDialog's option list (sole consumer; the message- prefix is a
    relic of its transcript days). Kind colors live on the icon. */
