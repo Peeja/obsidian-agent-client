@@ -204,6 +204,8 @@ export interface InputAreaProps {
 	) => Promise<void>;
 	/** Whether auto-mention setting is enabled */
 	autoMentionEnabled: boolean;
+	/** Whether to show the active note badge at all */
+	showActiveNoteBadge: boolean;
 	/** Message to restore (e.g., after cancellation) */
 	restoredMessage: string | null;
 	/** Input suggestions (mentions + slash commands) */
@@ -282,6 +284,7 @@ export function InputArea({
 	queuedPermissionCount = 0,
 	onApprovePermission,
 	autoMentionEnabled,
+	showActiveNoteBadge,
 	restoredMessage,
 	suggestions,
 	plugin,
@@ -1035,7 +1038,7 @@ export function InputArea({
 				onDrop={(e) => void handleDrop(e)}
 			>
 				{/* Auto-mention Badge */}
-				{mentions.activeNote && (
+				{mentions.activeNote && showActiveNoteBadge && (
 					<button
 						className="agent-client-auto-mention-inline"
 						onClick={() =>
@@ -1086,7 +1089,7 @@ export function InputArea({
 						onKeyDown={handleKeyDown}
 						onPaste={(e) => void handlePaste(e)}
 						placeholder={placeholder}
-						className={`agent-client-chat-input-textarea ${mentions.activeNote ? "has-auto-mention" : ""}`}
+						className={`agent-client-chat-input-textarea ${mentions.activeNote && showActiveNoteBadge ? "has-auto-mention" : ""}`}
 						rows={1}
 						spellCheck={obsidianSpellcheck}
 					/>

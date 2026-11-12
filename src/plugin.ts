@@ -112,6 +112,8 @@ export interface AgentClientPluginSettings {
 	defaultAgentId: string;
 	autoAllowPermissions: boolean;
 	autoMentionActiveNote: boolean;
+	/** Offer the active note as a badge to include it; when off, it's never included unless @-mentioned */
+	showActiveNoteBadge: boolean;
 	/** Surface `[[wikilinks]]` inside note content as resolved metadata so the agent can decide which links to follow */
 	expandWikilinkContext: boolean;
 	/** Show OS system notifications on response completion and permission requests */
@@ -191,6 +193,7 @@ const DEFAULT_SETTINGS: AgentClientPluginSettings = {
 	defaultAgentId: PRESET_AGENTS[0].presetId,
 	autoAllowPermissions: false,
 	autoMentionActiveNote: true,
+	showActiveNoteBadge: true,
 	expandWikilinkContext: true,
 	enableSystemNotifications: true,
 	promptInjection: {
@@ -1486,6 +1489,10 @@ export default class AgentClientPlugin extends Plugin {
 			autoMentionActiveNote: bool(
 				raw.autoMentionActiveNote,
 				D.autoMentionActiveNote,
+			),
+			showActiveNoteBadge: bool(
+				raw.showActiveNoteBadge,
+				D.showActiveNoteBadge,
 			),
 			expandWikilinkContext: bool(
 				raw.expandWikilinkContext,

@@ -153,6 +153,7 @@ const TRAILING_SAVE_DEBOUNCE_MS = 800;
 function selectChatPanelSettings(s: AgentClientPluginSettings) {
 	return {
 		autoMentionActiveNote: s.autoMentionActiveNote,
+		showActiveNoteBadge: s.showActiveNoteBadge,
 		debugMode: s.debugMode,
 		// Read by useChatActions (WSL path conversion); rarely changes.
 		windowsWslMode: s.windowsWslMode,
@@ -179,6 +180,7 @@ function chatPanelSettingsEqual(
 ): boolean {
 	return (
 		a.autoMentionActiveNote === b.autoMentionActiveNote &&
+		a.showActiveNoteBadge === b.showActiveNoteBadge &&
 		a.debugMode === b.debugMode &&
 		a.windowsWslMode === b.windowsWslMode &&
 		a.enableSystemNotifications === b.enableSystemNotifications &&
@@ -301,7 +303,7 @@ export const ChatPanel = React.memo(function ChatPanel({
 		vaultService,
 		plugin,
 		session.availableCommands || EMPTY_COMMANDS,
-		settings.autoMentionActiveNote,
+		settings.autoMentionActiveNote && settings.showActiveNoteBadge,
 		pinnedActiveNote,
 	);
 
@@ -1209,6 +1211,8 @@ export const ChatPanel = React.memo(function ChatPanel({
 				"agent-client:toggle-auto-mention",
 				(targetViewId?: string) => {
 					if (targetViewId && targetViewId !== viewId) return;
+					// A hidden badge can't be switched on
+					if (!plugin.settings.showActiveNoteBadge) return;
 					suggestions.mentions.toggleAutoMention();
 				},
 			),
@@ -1549,6 +1553,7 @@ export const ChatPanel = React.memo(function ChatPanel({
 			queuedPermissionCount={queuedPermissionCount}
 			onApprovePermission={agent.approvePermission}
 			autoMentionEnabled={settings.autoMentionActiveNote}
+			showActiveNoteBadge={settings.showActiveNoteBadge}
 			restoredMessage={restoredMessage}
 			suggestions={suggestions}
 			plugin={plugin}

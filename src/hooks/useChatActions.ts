@@ -253,7 +253,10 @@ export function useChatActions(
 
 			// Start the new chat as the setting says, as a newly opened chat does
 			suggestions.mentions.toggleAutoMention(
-				!plugin.settings.autoMentionActiveNote,
+				!(
+					plugin.settings.autoMentionActiveNote &&
+					plugin.settings.showActiveNoteBadge
+				),
 			);
 			agent.clearMessages();
 
