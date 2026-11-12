@@ -1,6 +1,7 @@
 import { getLogger } from "../utils/logger";
 import type { PermissionOption } from "../types/chat";
 import { LucideIcon } from "./shared/IconButton";
+import { permissionOptionLabel } from "../utils/permission-option";
 
 /** Kind semantics are conveyed by icon shape + color, not button background. */
 const KIND_ICONS: Record<PermissionOption["kind"], string> = {
@@ -48,7 +49,7 @@ export function PermissionBanner({
 				<button
 					key={option.optionId}
 					className={`agent-client-permission-option agent-client-permission-kind-${option.kind}`}
-					title={option.name}
+					title={permissionOptionLabel(option)}
 					onClick={() => {
 						if (onOptionSelected) {
 							onOptionSelected(option.optionId);
@@ -73,7 +74,7 @@ export function PermissionBanner({
 						/>
 					)}
 					<span className="agent-client-permission-option-label">
-						{option.name}
+						{permissionOptionLabel(option)}
 					</span>
 				</button>
 			))}
