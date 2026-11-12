@@ -251,7 +251,10 @@ export function useChatActions(
 				await autoExportIfEnabled("newChat", messages, session);
 			}
 
-			suggestions.mentions.toggleAutoMention(false);
+			// Start the new chat as the setting says, as a newly opened chat does
+			suggestions.mentions.toggleAutoMention(
+				!plugin.settings.autoMentionActiveNote,
+			);
 			agent.clearMessages();
 
 			const newAgentId = isAgentSwitch
@@ -263,6 +266,7 @@ export function useChatActions(
 			sessionHistory.invalidateCache();
 		},
 		[
+			plugin,
 			messages,
 			session,
 			logger,
