@@ -3,6 +3,7 @@ import type AgentClientPlugin from "../plugin";
 import type { ActivePermission } from "../types/chat";
 import { PermissionBanner } from "./PermissionBanner";
 import { ToolCallContentView } from "./ToolCallContentView";
+import { ToolArguments } from "./ToolArguments";
 import { LucideIcon } from "./shared/IconButton";
 
 const { useState, useEffect, useMemo } = React;
@@ -104,6 +105,9 @@ export function PermissionDialog({
 							{args && ` ${args}`}
 						</code>
 					</div>
+				)}
+				{!command && permission.rawInput && (
+					<ToolArguments rawInput={permission.rawInput} />
 				)}
 				{images.length > 0 && (
 					<div className="agent-client-tool-result-images-strip">
