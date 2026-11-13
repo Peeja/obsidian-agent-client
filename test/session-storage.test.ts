@@ -212,6 +212,74 @@ describe("SessionStorage — rename does not bump updatedAt (last-activity seman
 	});
 });
 
+describe("SessionStorage — agent-given titles (session_info_update)", () => {
+	it("replace the first-message title without bumping updatedAt", async () => {
+		const { storage, state } = makeStorage();
+		state.savedSessions = [
+			makeSession({
+				sessionId: "s1",
+				title: "Let's do my weekly review.",
+				updatedAt: "2026-01-01T00:00:00.000Z",
+			}),
+		];
+
+		await storage.applyAgentTitle("s1", "Weekly review: garden beds");
+
+		expect(state.savedSessions[0].title).toBe("Weekly review: garden beds");
+		expect(state.savedSessions[0].updatedAt).toBe(
+			"2026-01-01T00:00:00.000Z",
+		);
+	});
+
+	it("never replace a title the user set", async () => {
+		const { storage, state } = makeStorage();
+		state.savedSessions = [
+			makeSession({ sessionId: "s1", title: "first" }),
+		];
+
+		await storage.updateSessionTitle("s1", "My name");
+		await storage.applyAgentTitle("s1", "Agent name");
+
+		expect(state.savedSessions[0].title).toBe("My name");
+		expect(state.savedSessions[0].titleSetByUser).toBe(true);
+	});
+
+	it("sync the transcript's title snapshot", async () => {
+		const { storage, state, files } = makeStorage();
+		state.savedSessions = [
+			makeSession({ sessionId: "s1", title: "first" }),
+		];
+		await storage.saveSessionMessages("s1", "claude", []);
+
+		await storage.applyAgentTitle("s1", "Agent name");
+
+		const data = JSON.parse(files.get(filePath("s1")) as string) as Record<
+			string,
+			unknown
+		>;
+		expect(data.title).toBe("Agent name");
+	});
+
+	it("arriving before the session is saved are taken by its first save", async () => {
+		const { storage, state } = makeStorage();
+
+		await storage.applyAgentTitle("s1", "Agent name");
+		expect(state.savedSessions).toHaveLength(0);
+
+		await storage.saveSession(
+			makeSession({ sessionId: "s1", title: "first" }),
+		);
+		expect(state.savedSessions[0].title).toBe("Agent name");
+
+		// Taken once: a later save of another session with the same id is unaffected.
+		await storage.deleteSession("s1");
+		await storage.saveSession(
+			makeSession({ sessionId: "s1", title: "again" }),
+		);
+		expect(state.savedSessions[0].title).toBe("again");
+	});
+});
+
 describe("SessionStorage — non-embedded saves keep sessionId fallback", () => {
 	it("dedups by sessionId and never deletes a transcript", async () => {
 		const { storage, state, adapter } = makeStorage();
@@ -573,7 +641,8 @@ describe("SessionStorage — stored permissions are settled on load", () => {
 
 	function loadedPermission(messages: ChatMessage[] | null) {
 		const content = messages?.[0]?.content[0];
-		if (content?.type !== "tool_call") throw new Error("expected tool_call");
+		if (content?.type !== "tool_call")
+			throw new Error("expected tool_call");
 		return content.permissionRequest;
 	}
 

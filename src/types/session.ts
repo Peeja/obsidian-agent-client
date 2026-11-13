@@ -557,8 +557,14 @@ export interface SavedSessionInfo {
 	agentId: string;
 	/** Working directory for the session */
 	cwd: string;
-	/** Human-readable session title (first 50 chars of first user message) */
+	/**
+	 * Human-readable session title: the first 50 chars of the first user
+	 * message, until the agent names the session (session_info_update) or the
+	 * user renames it.
+	 */
 	title?: string;
+	/** True once the user has renamed the session; the agent's titles then no longer replace it. */
+	titleSetByUser?: boolean;
 	/**
 	 * Device-neutral id of the embedded block this session belongs to. Used to
 	 * RESTORE the block's latest conversation: getSavedSessionByEmbedId returns
