@@ -15,7 +15,6 @@ import type { SavedSessionInfo } from "../types/session";
 import { convertWindowsPathToWsl } from "../utils/platform";
 import { getLogger } from "../utils/logger";
 import { isPermissionPending } from "./message-state";
-import { titleUnderBase } from "../utils/session-title";
 
 // ============================================================================
 // Types
@@ -179,12 +178,7 @@ export class SessionStorage {
 				);
 				this.pendingAgentTitles.delete(sessionInfo.sessionId);
 				if (agentTitle !== undefined && !sessionInfo.titleSetByUser) {
-					sessionInfo = {
-						...sessionInfo,
-						title: sessionInfo.titleBase
-							? titleUnderBase(sessionInfo.titleBase, agentTitle)
-							: agentTitle,
-					};
+					sessionInfo = { ...sessionInfo, title: agentTitle };
 				}
 				sessions.unshift(sessionInfo);
 				evictLeastRecentlyUsed(sessions, MAX_SAVED_SESSIONS);
@@ -338,16 +332,14 @@ export class SessionStorage {
 				this.pendingAgentTitles.set(sessionId, title);
 				return;
 			}
-			const base = sessions[idx].titleBase;
-			const next = base ? titleUnderBase(base, title) : title;
-			if (sessions[idx].titleSetByUser || sessions[idx].title === next) {
+			if (sessions[idx].titleSetByUser || sessions[idx].title === title) {
 				return;
 			}
-			sessions[idx] = { ...sessions[idx], title: next };
+			sessions[idx] = { ...sessions[idx], title };
 			await this.settingsAccess.updateSettings({
 				savedSessions: sessions,
 			});
-			await this.syncTranscriptTitle(sessionId, next);
+			await this.syncTranscriptTitle(sessionId, title);
 		});
 		await this.sessionLock;
 	}

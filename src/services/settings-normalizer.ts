@@ -144,11 +144,6 @@ export const normalizeCustomAgent = (
 		args: sanitizeArgs(agent?.args),
 		env: normalizeEnvVars(agent?.env),
 		enabled: bool(agent?.enabled, true),
-		sessionTitle:
-			typeof agent?.sessionTitle === "string" &&
-			agent.sessionTitle.trim().length > 0
-				? agent.sessionTitle.trim()
-				: undefined,
 	};
 };
 

@@ -59,13 +59,6 @@ export interface BaseAgentSettings {
 	 * and already-open chats keep working. Check via `isAgentEnabled()`.
 	 */
 	enabled?: boolean;
-
-	/**
-	 * Title for this agent's new sessions, e.g. "Weekly review {date}" ({date}
-	 * is the local date, YYYY-MM-DD). A title the agent sends is added after
-	 * it. Unset: the first message is the title, until the agent sends one.
-	 */
-	sessionTitle?: string;
 }
 
 /**

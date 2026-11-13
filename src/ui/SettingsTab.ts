@@ -1591,21 +1591,6 @@ export class AgentClientSettingTab extends PluginSettingTab {
 					});
 				text.inputEl.rows = 3;
 			});
-
-		new Setting(bodyEl)
-			.setName("Session title")
-			.setDesc(
-				"Title for new sessions; {date} is today's date. A title the agent sends is added after it. Leave empty to use the first message.",
-			)
-			.addText((text) => {
-				text.setPlaceholder("Weekly review {date}")
-					.setValue(agent.sessionTitle ?? "")
-					.onChange(async (value) => {
-						this.plugin.settings.customAgents[index].sessionTitle =
-							value.trim() || undefined;
-						await this.flushSettings();
-					});
-			});
 	}
 
 	/**
