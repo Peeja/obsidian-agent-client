@@ -6,6 +6,7 @@ import {
 	MarkdownRenderChild,
 	type MarkdownPostProcessorContext,
 	TFile,
+	Platform,
 } from "obsidian";
 import * as semver from "semver";
 import { ChatView, VIEW_TYPE_CHAT } from "./ui/ChatView";
@@ -31,6 +32,7 @@ import {
 } from "./services/settings-service";
 import { AgentClientSettingTab } from "./ui/SettingsTab";
 import { AcpClient } from "./acp/acp-client";
+import { SessionTitleServer } from "./services/session-title-server";
 import {
 	absorbCustomAgents,
 	normalizeCustomAgent,
@@ -242,6 +244,8 @@ const DEFAULT_SETTINGS: AgentClientPluginSettings = {
 export default class AgentClientPlugin extends Plugin {
 	settings: AgentClientPluginSettings;
 	settingsService!: SettingsService;
+	/** Offers agents the set_session_title tool (desktop only). */
+	sessionTitleServer: SessionTitleServer | null = null;
 
 	/** Registry for all chat view containers (sidebar + floating) */
 	viewRegistry = new ChatViewRegistry();
@@ -282,6 +286,16 @@ export default class AgentClientPlugin extends Plugin {
 
 		// Initialize settings store
 		this.settingsService = createSettingsService(this.settings, this);
+
+		if (Platform.isDesktopApp) {
+			this.sessionTitleServer = new SessionTitleServer(
+				(sessionId, title) =>
+					this.settingsService.applyAgentTitle(sessionId, title, {
+						fromTool: true,
+					}),
+				this.manifest.version,
+			);
+		}
 
 		// Detach stale leaves from a previous plugin instance to prevent
 		// "Attempting to register an existing view type" when Obsidian's
@@ -474,6 +488,9 @@ export default class AgentClientPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.sessionTitleServer?.close();
+		this.sessionTitleServer = null;
+
 		// Unmount floating button
 		this.floatingButton?.unmount();
 		this.floatingButton = null;
