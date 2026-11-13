@@ -329,6 +329,18 @@ export function useSessionHistory(
 		});
 	}, [settingsAccess, session.agentId]);
 
+	// Agent-given titles: when the agent names the session (session_info_update),
+	// the name replaces the first-message title, unless the user has renamed it.
+	// The rename detection above then carries it into the displayed list.
+	useEffect(() => {
+		return agentClient.onSessionUpdate((update) => {
+			if (update.type !== "session_info_update") return;
+			const title = update.title?.trim();
+			if (!title) return;
+			void settingsAccess.applyAgentTitle(update.sessionId, title);
+		});
+	}, [agentClient, settingsAccess]);
+
 	/**
 	 * Check if cache is valid.
 	 */

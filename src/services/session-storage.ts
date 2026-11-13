@@ -120,6 +120,13 @@ export class SessionStorage {
 	/** Lock for session operations to prevent race conditions */
 	private sessionLock: Promise<void> = Promise.resolve();
 
+	/**
+	 * Titles the agent sent for sessions not saved yet. The agent can name a
+	 * session during its first turn, before the first message's save creates
+	 * the entry; that save then takes the title.
+	 */
+	private pendingAgentTitles = new Map<string, string>();
+
 	constructor(
 		plugin: AgentClientPlugin,
 		settingsAccess: SessionStorageSettingsAccess,
@@ -166,6 +173,13 @@ export class SessionStorage {
 			if (existingIndex >= 0) {
 				sessions[existingIndex] = sessionInfo;
 			} else {
+				const agentTitle = this.pendingAgentTitles.get(
+					sessionInfo.sessionId,
+				);
+				this.pendingAgentTitles.delete(sessionInfo.sessionId);
+				if (agentTitle !== undefined && !sessionInfo.titleSetByUser) {
+					sessionInfo = { ...sessionInfo, title: agentTitle };
+				}
 				sessions.unshift(sessionInfo);
 				evictLeastRecentlyUsed(sessions, MAX_SAVED_SESSIONS);
 			}
@@ -273,6 +287,7 @@ export class SessionStorage {
 				sessions[idx] = {
 					...sessions[idx],
 					title: newTitle,
+					titleSetByUser: true,
 				};
 			} else if (createIfMissing) {
 				sessions.unshift({
@@ -280,6 +295,7 @@ export class SessionStorage {
 					agentId: createIfMissing.agentId,
 					cwd: createIfMissing.cwd,
 					title: newTitle,
+					titleSetByUser: true,
 					createdAt: new Date().toISOString(),
 					updatedAt: new Date().toISOString(),
 				});
@@ -296,6 +312,34 @@ export class SessionStorage {
 			// covers the rename-then-never-continue case where no turn-end
 			// save would refresh it).
 			await this.syncTranscriptTitle(sessionId, newTitle);
+		});
+		await this.sessionLock;
+	}
+
+	/**
+	 * Apply a title the agent gave the session (ACP session_info_update).
+	 * It replaces the saved title unless the user has renamed the session. A
+	 * session not saved yet takes it when it is (see pendingAgentTitles).
+	 * Like a rename, it does not bump updatedAt.
+	 */
+	async applyAgentTitle(sessionId: string, title: string): Promise<void> {
+		this.sessionLock = this.sessionLock.then(async () => {
+			const sessions = [
+				...(this.settingsAccess.getSnapshot().savedSessions || []),
+			];
+			const idx = sessions.findIndex((s) => s.sessionId === sessionId);
+			if (idx < 0) {
+				this.pendingAgentTitles.set(sessionId, title);
+				return;
+			}
+			if (sessions[idx].titleSetByUser || sessions[idx].title === title) {
+				return;
+			}
+			sessions[idx] = { ...sessions[idx], title };
+			await this.settingsAccess.updateSettings({
+				savedSessions: sessions,
+			});
+			await this.syncTranscriptTitle(sessionId, title);
 		});
 		await this.sessionLock;
 	}
