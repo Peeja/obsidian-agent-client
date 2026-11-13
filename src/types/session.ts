@@ -566,6 +566,11 @@ export interface SavedSessionInfo {
 	/** True once the user has renamed the session; the agent's titles then no longer replace it. */
 	titleSetByUser?: boolean;
 	/**
+	 * The title from the agent's "Session title" template, if it has one. The
+	 * agent's titles are added after it rather than replacing it.
+	 */
+	titleBase?: string;
+	/**
 	 * Device-neutral id of the embedded block this session belongs to. Used to
 	 * RESTORE the block's latest conversation: getSavedSessionByEmbedId returns
 	 * the newest embedId match. Sessions are NOT deduped or deleted by embedId —

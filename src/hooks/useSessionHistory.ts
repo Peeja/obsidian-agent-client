@@ -13,6 +13,7 @@ import type {
 import type { ChatMessage } from "../types/chat";
 import { extractErrorMessage } from "../utils/error-utils";
 import { truncateTitle } from "../utils/text";
+import { renderTitleTemplate } from "../utils/session-title";
 
 // ============================================================================
 // Session Capability Helpers (from session-capability-utils.ts)
@@ -789,13 +790,24 @@ export function useSessionHistory(
 		) => {
 			if (!session.agentId) return;
 
-			const title = truncateTitle(messageContent);
+			// A custom agent's "Session title" template, if it has one, titles
+			// the session instead of the first message.
+			const template = settingsAccess
+				.getSnapshot()
+				.customAgents.find(
+					(a) => a.id === session.agentId,
+				)?.sessionTitle;
+			const titleBase = template
+				? renderTitleTemplate(template, new Date())
+				: undefined;
+			const title = titleBase || truncateTitle(messageContent);
 
 			await settingsAccess.saveSession({
 				sessionId,
 				agentId: session.agentId,
 				cwd: agentCwd,
 				title,
+				titleBase: titleBase || undefined,
 				embedId,
 				createdAt: new Date().toISOString(),
 				updatedAt: new Date().toISOString(),

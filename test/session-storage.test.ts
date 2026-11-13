@@ -280,6 +280,36 @@ describe("SessionStorage — agent-given titles (session_info_update)", () => {
 	});
 });
 
+describe("SessionStorage — agent titles under a template's title", () => {
+	it("are added after the template's title", async () => {
+		const { storage, state } = makeStorage();
+		const base = "Weekly review 2026-11-13";
+		state.savedSessions = [
+			makeSession({ sessionId: "s1", title: base, titleBase: base }),
+		];
+
+		await storage.applyAgentTitle("s1", "Weekly review: garden beds");
+
+		expect(state.savedSessions[0].title).toBe(
+			"Weekly review 2026-11-13 · garden beds",
+		);
+	});
+
+	it("are added after it when they arrive before the first save", async () => {
+		const { storage, state } = makeStorage();
+		const base = "Weekly review 2026-11-13";
+
+		await storage.applyAgentTitle("s1", "Garden beds");
+		await storage.saveSession(
+			makeSession({ sessionId: "s1", title: base, titleBase: base }),
+		);
+
+		expect(state.savedSessions[0].title).toBe(
+			"Weekly review 2026-11-13 · Garden beds",
+		);
+	});
+});
+
 describe("SessionStorage — non-embedded saves keep sessionId fallback", () => {
 	it("dedups by sessionId and never deletes a transcript", async () => {
 		const { storage, state, adapter } = makeStorage();
