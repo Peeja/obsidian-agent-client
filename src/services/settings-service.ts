@@ -113,7 +113,11 @@ export interface ISettingsAccess {
 	 * Apply a title the agent gave a session, unless the user has renamed it.
 	 * A session not saved yet takes the title when it is.
 	 */
-	applyAgentTitle(sessionId: string, title: string): Promise<void>;
+	applyAgentTitle(
+		sessionId: string,
+		title: string,
+		options?: { fromTool?: boolean },
+	): Promise<void>;
 
 	/**
 	 * Update fields of an existing saved session.
@@ -304,8 +308,12 @@ export class SettingsService implements ISettingsAccess {
 		);
 	}
 
-	async applyAgentTitle(sessionId: string, title: string): Promise<void> {
-		return this.sessionStorage.applyAgentTitle(sessionId, title);
+	async applyAgentTitle(
+		sessionId: string,
+		title: string,
+		options?: { fromTool?: boolean },
+	): Promise<void> {
+		return this.sessionStorage.applyAgentTitle(sessionId, title, options);
 	}
 
 	async updateSession(

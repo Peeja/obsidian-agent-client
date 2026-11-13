@@ -81,6 +81,8 @@ export class AcpClient {
 	private isInitializedFlag = false;
 	private currentAgentId: string | null = null;
 	private currentSessionId: string | null = null;
+	/** Whether the agent accepts HTTP MCP servers (from initialize). */
+	private acceptsHttpMcp = false;
 
 	// Callbacks (none — all events flow through onSessionUpdate via AcpHandler)
 
@@ -453,6 +455,8 @@ export class AcpClient {
 
 			this.isInitializedFlag = true;
 			this.currentAgentId = config.id;
+			this.acceptsHttpMcp =
+				initResult.agentCapabilities?.mcpCapabilities?.http ?? false;
 
 			return AcpTypeConverter.toInitializeResult(initResult);
 		} catch (error) {
@@ -496,6 +500,24 @@ export class AcpClient {
 	}
 
 	/**
+	 * MCP servers this plugin offers the agent's sessions: the session title
+	 * tool (see SessionTitleServer), to agents that take HTTP servers.
+	 */
+	private async mcpServers(): Promise<acp.McpServer[]> {
+		const server = this.plugin.sessionTitleServer;
+		if (!server || !this.acceptsHttpMcp) return [];
+		try {
+			return [await server.mcpServer()];
+		} catch (error) {
+			this.logger.error(
+				"[AcpClient] Session title server unavailable:",
+				error,
+			);
+			return [];
+		}
+	}
+
+	/**
 	 * Create a new chat session with the agent.
 	 */
 	async newSession(workingDirectory: string): Promise<SessionResult> {
@@ -506,7 +528,7 @@ export class AcpClient {
 
 			const response = await connection.agent.request("session/new", {
 				cwd: this.toSessionCwd(workingDirectory),
-				mcpServers: [],
+				mcpServers: await this.mcpServers(),
 			});
 
 			this.logger.log(
@@ -919,7 +941,7 @@ export class AcpClient {
 			const response = await connection.agent.request("session/load", {
 				sessionId,
 				cwd: this.toSessionCwd(cwd),
-				mcpServers: [],
+				mcpServers: await this.mcpServers(),
 			});
 
 			this.logger.log(`[AcpClient] Session loaded: ${sessionId}`);
@@ -959,7 +981,7 @@ export class AcpClient {
 			const response = await connection.agent.request("session/resume", {
 				sessionId,
 				cwd: this.toSessionCwd(cwd),
-				mcpServers: [],
+				mcpServers: await this.mcpServers(),
 			});
 
 			this.logger.log(`[AcpClient] Session resumed: ${sessionId}`);
@@ -993,7 +1015,7 @@ export class AcpClient {
 			const response = await connection.agent.request("session/fork", {
 				sessionId,
 				cwd: this.toSessionCwd(cwd),
-				mcpServers: [],
+				mcpServers: await this.mcpServers(),
 			});
 
 			this.logger.log(

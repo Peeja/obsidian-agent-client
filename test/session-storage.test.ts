@@ -280,6 +280,60 @@ describe("SessionStorage — agent-given titles (session_info_update)", () => {
 	});
 });
 
+describe("SessionStorage — titles from the set_session_title tool", () => {
+	it("aren't replaced by the agent's automatic titles", async () => {
+		const { storage, state } = makeStorage();
+		state.savedSessions = [
+			makeSession({ sessionId: "s1", title: "first" }),
+		];
+
+		await storage.applyAgentTitle("s1", "Weekly review 2026-11-13", {
+			fromTool: true,
+		});
+		await storage.applyAgentTitle("s1", "Garden beds and taxes");
+
+		expect(state.savedSessions[0].title).toBe("Weekly review 2026-11-13");
+		expect(state.savedSessions[0].titleSetByAgent).toBe(true);
+	});
+
+	it("can be changed by the tool again", async () => {
+		const { storage, state } = makeStorage();
+		state.savedSessions = [
+			makeSession({ sessionId: "s1", title: "first" }),
+		];
+
+		await storage.applyAgentTitle("s1", "One", { fromTool: true });
+		await storage.applyAgentTitle("s1", "Two", { fromTool: true });
+
+		expect(state.savedSessions[0].title).toBe("Two");
+	});
+
+	it("yield to a title the user set", async () => {
+		const { storage, state } = makeStorage();
+		state.savedSessions = [
+			makeSession({ sessionId: "s1", title: "first" }),
+		];
+
+		await storage.updateSessionTitle("s1", "Mine");
+		await storage.applyAgentTitle("s1", "Tool", { fromTool: true });
+
+		expect(state.savedSessions[0].title).toBe("Mine");
+	});
+
+	it("set before the first save survive a later automatic title", async () => {
+		const { storage, state } = makeStorage();
+
+		await storage.applyAgentTitle("s1", "Tool", { fromTool: true });
+		await storage.applyAgentTitle("s1", "Automatic");
+		await storage.saveSession(
+			makeSession({ sessionId: "s1", title: "first" }),
+		);
+
+		expect(state.savedSessions[0].title).toBe("Tool");
+		expect(state.savedSessions[0].titleSetByAgent).toBe(true);
+	});
+});
+
 describe("SessionStorage — non-embedded saves keep sessionId fallback", () => {
 	it("dedups by sessionId and never deletes a transcript", async () => {
 		const { storage, state, adapter } = makeStorage();

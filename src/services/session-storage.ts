@@ -125,7 +125,10 @@ export class SessionStorage {
 	 * session during its first turn, before the first message's save creates
 	 * the entry; that save then takes the title.
 	 */
-	private pendingAgentTitles = new Map<string, string>();
+	private pendingAgentTitles = new Map<
+		string,
+		{ title: string; fromTool: boolean }
+	>();
 
 	constructor(
 		plugin: AgentClientPlugin,
@@ -178,7 +181,11 @@ export class SessionStorage {
 				);
 				this.pendingAgentTitles.delete(sessionInfo.sessionId);
 				if (agentTitle !== undefined && !sessionInfo.titleSetByUser) {
-					sessionInfo = { ...sessionInfo, title: agentTitle };
+					sessionInfo = {
+						...sessionInfo,
+						title: agentTitle.title,
+						...(agentTitle.fromTool && { titleSetByAgent: true }),
+					};
 				}
 				sessions.unshift(sessionInfo);
 				evictLeastRecentlyUsed(sessions, MAX_SAVED_SESSIONS);
@@ -317,25 +324,44 @@ export class SessionStorage {
 	}
 
 	/**
-	 * Apply a title the agent gave the session (ACP session_info_update).
-	 * It replaces the saved title unless the user has renamed the session. A
-	 * session not saved yet takes it when it is (see pendingAgentTitles).
-	 * Like a rename, it does not bump updatedAt.
+	 * Apply a title the agent gave the session: one it sent itself (ACP
+	 * session_info_update), or, with fromTool, one the model set with the
+	 * set_session_title tool. It replaces the saved title unless the user has
+	 * renamed the session; a title from the tool also isn't replaced by the
+	 * agent's own titles after it. A session not saved yet takes it when it is
+	 * (see pendingAgentTitles). Like a rename, it does not bump updatedAt.
 	 */
-	async applyAgentTitle(sessionId: string, title: string): Promise<void> {
+	async applyAgentTitle(
+		sessionId: string,
+		title: string,
+		{ fromTool = false }: { fromTool?: boolean } = {},
+	): Promise<void> {
 		this.sessionLock = this.sessionLock.then(async () => {
 			const sessions = [
 				...(this.settingsAccess.getSnapshot().savedSessions || []),
 			];
 			const idx = sessions.findIndex((s) => s.sessionId === sessionId);
 			if (idx < 0) {
-				this.pendingAgentTitles.set(sessionId, title);
+				if (
+					!this.pendingAgentTitles.get(sessionId)?.fromTool ||
+					fromTool
+				) {
+					this.pendingAgentTitles.set(sessionId, { title, fromTool });
+				}
 				return;
 			}
-			if (sessions[idx].titleSetByUser || sessions[idx].title === title) {
+			const entry = sessions[idx];
+			if (entry.titleSetByUser || (entry.titleSetByAgent && !fromTool)) {
 				return;
 			}
-			sessions[idx] = { ...sessions[idx], title };
+			if (entry.title === title && (entry.titleSetByAgent || !fromTool)) {
+				return;
+			}
+			sessions[idx] = {
+				...entry,
+				title,
+				...(fromTool && { titleSetByAgent: true }),
+			};
 			await this.settingsAccess.updateSettings({
 				savedSessions: sessions,
 			});
