@@ -29,16 +29,10 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 		const component = new Component();
 		component.load();
 
-		// Render markdown
-		void ObsidianMarkdownRenderer.render(
-			plugin.app,
-			text,
-			el,
-			"",
-			component,
-		).then(() => {
-			// Note views mark links to notes that don't exist yet, but the
-			// renderer doesn't; mark them so the theme styles them the same way.
+		// Note views mark links to notes that don't exist yet, but the renderer
+		// doesn't; mark them so the theme styles them the same way, and again
+		// whenever notes are created, renamed or deleted, as note views do.
+		const markUnresolved = () => {
 			el.querySelectorAll("a.internal-link").forEach((link) => {
 				const rawHref = link.getAttribute("data-href");
 				if (!rawHref) return;
@@ -50,7 +44,20 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 				);
 				link.classList.toggle("is-unresolved", !dest);
 			});
-		});
+		};
+
+		// Render markdown
+		void ObsidianMarkdownRenderer.render(
+			plugin.app,
+			text,
+			el,
+			"",
+			component,
+		).then(markUnresolved);
+
+		component.registerEvent(
+			plugin.app.metadataCache.on("resolved", markUnresolved),
+		);
 
 		// Handle internal link clicks
 		const vaultBasePath =
