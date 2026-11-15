@@ -1,6 +1,7 @@
 import * as React from "react";
 const { useRef, useEffect, useCallback, useMemo } = React;
 import { setIcon, Menu } from "obsidian";
+import { readableChoiceName } from "../utils/choice-label";
 
 import {
 	flattenConfigSelectOptions,
@@ -17,7 +18,21 @@ import {
 interface ToolbarDropdownItem {
 	value: string;
 	label: string;
+	/** Shown under the label in the menu, when the agent describes the choice. */
+	description?: string;
 	groupName?: string;
+}
+
+/** A menu item's title: the label, with the description as a quieter second line. */
+function menuTitle(item: ToolbarDropdownItem): string | DocumentFragment {
+	if (!item.description) return item.label;
+	const title = document.createDocumentFragment();
+	title.createDiv({ text: item.label });
+	title.createDiv({
+		text: item.description,
+		cls: "agent-client-toolbar-dropdown-description",
+	});
+	return title;
 }
 
 interface ToolbarDropdownProps {
@@ -75,7 +90,7 @@ function ToolbarDropdown({
 
 				menu.addItem((menuItem) => {
 					menuItem
-						.setTitle(item.label)
+						.setTitle(menuTitle(item))
 						.setChecked(item.value === currentValue)
 						.onClick(() => {
 							onChange(item.value);
@@ -218,13 +233,15 @@ export function InputToolbar({
 		if (!modes?.availableModes) return [];
 		return modes.availableModes.map((m) => ({
 			value: m.id,
-			label: m.name,
+			label: readableChoiceName(m.name, m.id),
+			description: m.description ?? undefined,
 		}));
 	}, [modes]);
 
 	const currentModeLabel = useMemo(() => {
 		const id = modes?.currentModeId;
-		return modes?.availableModes?.find((m) => m.id === id)?.name ?? "Mode";
+		const mode = modes?.availableModes?.find((m) => m.id === id);
+		return mode ? readableChoiceName(mode.name, mode.id) : "Mode";
 	}, [modes]);
 
 	// ----- Render -----
@@ -267,7 +284,8 @@ export function InputToolbar({
 							for (const opt of group.options) {
 								items.push({
 									value: opt.value,
-									label: `${group.name} / ${opt.name}`,
+									label: `${group.name} / ${readableChoiceName(opt.name, opt.value)}`,
+									description: opt.description ?? undefined,
 									groupName: group.name,
 								});
 							}
@@ -275,7 +293,8 @@ export function InputToolbar({
 					} else {
 						items = flatOptions.map((opt) => ({
 							value: opt.value,
-							label: opt.name,
+							label: readableChoiceName(opt.name, opt.value),
+							description: opt.description ?? undefined,
 						}));
 					}
 
