@@ -3,6 +3,7 @@ const { useRef, useEffect } = React;
 import {
 	Component,
 	FileSystemAdapter,
+	getLinkpath,
 	MarkdownRenderer as ObsidianMarkdownRenderer,
 	Platform,
 } from "obsidian";
@@ -35,7 +36,21 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 			el,
 			"",
 			component,
-		);
+		).then(() => {
+			// Note views mark links to notes that don't exist yet, but the
+			// renderer doesn't; mark them so the theme styles them the same way.
+			el.querySelectorAll("a.internal-link").forEach((link) => {
+				const rawHref = link.getAttribute("data-href");
+				if (!rawHref) return;
+				const href = decodeURIComponent(rawHref);
+				if (isAbsolutePath(href)) return;
+				const dest = plugin.app.metadataCache.getFirstLinkpathDest(
+					getLinkpath(href),
+					"",
+				);
+				link.classList.toggle("is-unresolved", !dest);
+			});
+		});
 
 		// Handle internal link clicks
 		const vaultBasePath =
