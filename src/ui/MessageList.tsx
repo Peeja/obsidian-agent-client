@@ -8,6 +8,7 @@ import type { IChatViewHost } from "./view-host";
 import { setIcon } from "obsidian";
 import { MessageBubble } from "./MessageBubble";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import { shouldFollow, type ScrollState } from "../utils/scroll-follow";
 
 // How long (ms) after a tab is re-shown we refuse to shrink measured item
 // sizes. Right after re-show the items briefly re-measure small while their
@@ -144,18 +145,25 @@ export function MessageList({
 	/**
 	 * Check if the scroll position is near the bottom.
 	 */
+	const lastScrollRef = useRef<ScrollState | null>(null);
+	const setFollowing = useCallback((following: boolean) => {
+		isAtBottomRef.current = following;
+		setIsAtBottom(following);
+	}, []);
 	const checkIfAtBottom = useCallback(() => {
 		const container = containerRef.current;
 		if (!container) return true;
 
-		const threshold = 35;
-		const isNearBottom =
-			container.scrollTop + container.clientHeight >=
-			container.scrollHeight - threshold;
-		isAtBottomRef.current = isNearBottom;
-		setIsAtBottom(isNearBottom);
-		return isNearBottom;
-	}, []);
+		const current = {
+			top: container.scrollTop,
+			height: container.scrollHeight,
+			client: container.clientHeight,
+		};
+		const following = shouldFollow(lastScrollRef.current, current);
+		lastScrollRef.current = current;
+		setFollowing(following);
+		return following;
+	}, [setFollowing]);
 
 	// Reset scroll state and drop the per-message size cache when messages are
 	// cleared (new chat / restore / fork / restart all funnel through an empty
@@ -196,8 +204,10 @@ export function MessageList({
 		}
 
 		if (isAtBottomRef.current) {
-			// Use requestAnimationFrame to ensure virtualizer has measured
+			// Use requestAnimationFrame to ensure virtualizer has measured.
+			// Check again then: the user may have scrolled up in between.
 			window.requestAnimationFrame(() => {
+				if (!isAtBottomRef.current) return;
 				virtualizer.scrollToIndex(messages.length - 1, {
 					align: "end",
 				});
@@ -213,12 +223,18 @@ export function MessageList({
 		const handleScroll = () => {
 			checkIfAtBottom();
 		};
+		// The wheel or trackpad moving up stops following straight away,
+		// before the scroll event (and before the next chunk can snap back).
+		const handleWheel = (e: WheelEvent) => {
+			if (e.deltaY < 0) setFollowing(false);
+		};
 
 		view.registerDomEvent(container, "scroll", handleScroll);
+		view.registerDomEvent(container, "wheel", handleWheel);
 
 		// Initial check
 		checkIfAtBottom();
-	}, [view, checkIfAtBottom]);
+	}, [view, checkIfAtBottom, setFollowing]);
 
 	// ============================================================
 	// Render
