@@ -1157,6 +1157,14 @@ If your plugin does not need CSS, delete this file.
 
 /* Toolbar dropdown — opens an Obsidian Menu on click. */
 
+/* A choice's description, under its name in a toolbar dropdown's menu. */
+.agent-client-toolbar-dropdown-description {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	white-space: normal;
+	max-width: 32em;
+}
+
 .agent-client-toolbar-dropdown {
 	display: inline-flex;
 	align-items: center;
