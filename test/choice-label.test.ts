@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { readableChoiceName } from "../src/utils/choice-label";
+import {
+	choiceDescription,
+	readableChoiceName,
+} from "../src/utils/choice-label";
 
 describe("readableChoiceName", () => {
 	it("turns an identifier sent as the name into words", () => {
@@ -26,5 +29,26 @@ describe("readableChoiceName", () => {
 			),
 		).toBe("deepseek/deepseek-v4.1-flash");
 		expect(readableChoiceName("o3", "o3")).toBe("o3");
+	});
+});
+
+describe("choiceDescription", () => {
+	it("drops an opening that repeats the label", () => {
+		expect(choiceDescription("Chat only, no tool calls", "Chat")).toBe(
+			"No tool calls",
+		);
+	});
+
+	it("keeps descriptions that don't repeat the label", () => {
+		expect(choiceDescription("Ask before every tool call", "Approve")).toBe(
+			"Ask before every tool call",
+		);
+		expect(
+			choiceDescription("Automatically approve tool calls", "Auto"),
+		).toBe("Automatically approve tool calls");
+		expect(choiceDescription("Chatty, but careful", "Chat")).toBe(
+			"Chatty, but careful",
+		);
+		expect(choiceDescription("Chat only", "Chat")).toBe("Chat only");
 	});
 });

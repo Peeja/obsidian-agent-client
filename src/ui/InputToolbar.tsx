@@ -1,7 +1,7 @@
 import * as React from "react";
 const { useRef, useEffect, useCallback, useMemo } = React;
 import { setIcon, Menu } from "obsidian";
-import { readableChoiceName } from "../utils/choice-label";
+import { choiceDescription, readableChoiceName } from "../utils/choice-label";
 
 import {
 	flattenConfigSelectOptions,
@@ -23,13 +23,13 @@ interface ToolbarDropdownItem {
 	groupName?: string;
 }
 
-/** A menu item's title: the label, with the description as a quieter second line. */
+/** A menu item's title: the label, then " · " and the description, quieter. */
 function menuTitle(item: ToolbarDropdownItem): string | DocumentFragment {
 	if (!item.description) return item.label;
 	const title = document.createDocumentFragment();
-	title.createDiv({ text: item.label });
-	title.createDiv({
-		text: item.description,
+	title.appendText(item.label);
+	title.createSpan({
+		text: ` · ${choiceDescription(item.description, item.label)}`,
 		cls: "agent-client-toolbar-dropdown-description",
 	});
 	return title;
