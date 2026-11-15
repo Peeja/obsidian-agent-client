@@ -7,7 +7,7 @@ import {
 describe("readableChoiceName", () => {
 	it("turns an identifier sent as the name into words", () => {
 		expect(readableChoiceName("smart_approve", "smart_approve")).toBe(
-			"Smart approve",
+			"Smart Approve",
 		);
 		expect(readableChoiceName("auto", "auto")).toBe("Auto");
 		expect(readableChoiceName("off", "off")).toBe("Off");
