@@ -4,10 +4,13 @@ import {
 	Component,
 	FileSystemAdapter,
 	getLinkpath,
+	Keymap,
 	MarkdownRenderer as ObsidianMarkdownRenderer,
 	parseLinktext,
 	resolveSubpath,
 	Platform,
+	setIcon,
+	setTooltip,
 } from "obsidian";
 import { convertWslPathToWindows } from "../../utils/platform";
 import { isAbsolutePath } from "../../utils/paths";
@@ -76,6 +79,30 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 			});
 		};
 
+		// Note views give each embedded note an "Open link" button in its corner;
+		// the embeds the renderer makes don't have one. Add it, with the same
+		// markup, so the theme draws it the same way.
+		const addEmbedLinks = () => {
+			el.querySelectorAll<HTMLElement>(
+				".internal-embed.markdown-embed[src]",
+			).forEach((embed) => {
+				if (embed.querySelector(":scope > .markdown-embed-link")) return;
+				const src = embed.getAttribute("src")!;
+				const link = embed.createDiv("markdown-embed-link");
+				setIcon(link, "lucide-maximize-2");
+				setTooltip(link, "Open link");
+				link.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					void plugin.app.workspace.openLinkText(
+						src,
+						"",
+						Keymap.isModEvent(e),
+					);
+				});
+			});
+		};
+
 		// Render markdown
 		void ObsidianMarkdownRenderer.render(
 			plugin.app,
@@ -85,6 +112,7 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 			component,
 		).then(() => {
 			replaceMissingSections();
+			addEmbedLinks();
 			markUnresolved();
 		});
 
