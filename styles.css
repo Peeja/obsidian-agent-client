@@ -2812,3 +2812,9 @@ If your plugin does not need CSS, delete this file.
 	width: 16px;
 	height: 16px;
 }
+
+/* An embed whose heading or block isn't in the note (MarkdownRenderer.tsx) */
+.agent-client-missing-section {
+	color: var(--text-muted);
+	font-style: italic;
+}
