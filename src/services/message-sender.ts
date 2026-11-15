@@ -168,7 +168,10 @@ const DEFAULT_MAX_SELECTION_LENGTH = 10000; // Default maximum characters for se
 const LATEX_MATH_INSTRUCTION =
 	"This client uses Obsidian Flavored Markdown. For math, use $...$ for inline and $$...$$ for display (not \\(...\\) or \\[...\\]).";
 const WIKI_LINK_INSTRUCTION =
-	"When referencing notes in this vault, use [[Note Name]] wikilink syntax so they become clickable links.";
+	"When referencing notes in this vault, use [[Note Name]] wikilink syntax so they become clickable links: " +
+	"[[Note#Heading]] for a section, [[Note#^block-id]] for a block, [[Note|text]] for other link text, " +
+	"and ! before any of them to embed it instead. A section link must match the heading as written in the note's " +
+	"source, including any link or formatting syntax in it, not as it looks when rendered.";
 const TABLE_INSTRUCTION =
 	"Always leave a blank line before Markdown tables; without it Obsidian renders them as plain text.";
 
