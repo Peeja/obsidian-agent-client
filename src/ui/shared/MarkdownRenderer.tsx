@@ -4,6 +4,8 @@ import {
 	Component,
 	FileSystemAdapter,
 	MarkdownRenderer as ObsidianMarkdownRenderer,
+	parseLinktext,
+	resolveSubpath,
 	Platform,
 } from "obsidian";
 import { convertWslPathToWindows } from "../../utils/platform";
@@ -28,6 +30,34 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 		const component = new Component();
 		component.load();
 
+		// Rendered outside a note view, Obsidian embeds the whole note when an
+		// embed's heading or block isn't in it. That's rarely what's wanted in a
+		// chat, so say it's missing instead, as note views do.
+		const replaceMissingSections = () => {
+			el.querySelectorAll(".internal-embed[src*='#']").forEach((embed) => {
+				const { path, subpath } = parseLinktext(
+					embed.getAttribute("src") ?? "",
+				);
+				const file = plugin.app.metadataCache.getFirstLinkpathDest(
+					path,
+					"",
+				);
+				if (!file || file.extension !== "md" || !subpath) return;
+				const cache = plugin.app.metadataCache.getFileCache(file);
+				if (!cache || resolveSubpath(cache, subpath)) return;
+				const missing = createSpan({
+					cls: "agent-client-missing-section",
+					text: `Unable to find “${subpath.slice(1)}” in `,
+				});
+				missing.createEl("a", {
+					cls: "internal-link",
+					text: file.basename,
+					attr: { "data-href": file.path, href: file.path },
+				});
+				embed.replaceWith(missing);
+			});
+		};
+
 		// Render markdown
 		void ObsidianMarkdownRenderer.render(
 			plugin.app,
@@ -35,7 +65,7 @@ export function MarkdownRenderer({ text, plugin }: MarkdownRendererProps) {
 			el,
 			"",
 			component,
-		);
+		).then(replaceMissingSections);
 
 		// Handle internal link clicks
 		const vaultBasePath =
