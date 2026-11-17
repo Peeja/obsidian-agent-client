@@ -247,6 +247,7 @@ export function InputToolbar({
 					}
 				>
 					{Math.round((usage.used / usage.size) * 100)}%
+					{usage.cost && ` · ${formatCost(usage.cost.amount)}`}
 				</span>
 			)}
 
