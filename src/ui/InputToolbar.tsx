@@ -132,6 +132,11 @@ function formatTokenCount(tokens: number): string {
 	return k >= 100 ? `${Math.round(k)}K` : `${k.toFixed(1)}K`;
 }
 
+/** Format session cost for display; cheap sessions get a third decimal (e.g. 0.043 → "$0.043") */
+function formatCost(amount: number): string {
+	return `$${amount.toFixed(amount < 0.1 ? 3 : 2)}`;
+}
+
 /** Get CSS class for usage percentage color thresholds */
 function getUsageColorClass(percentage: number): string {
 	if (percentage >= 90) return "agent-client-usage-danger";
